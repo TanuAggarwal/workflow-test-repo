@@ -53,17 +53,17 @@ jobs:
             echo "No PR number found in commit message — this might be a direct push."
           fi
 
-      - name: "Test Summary"
-        run: |
-          echo "🎉 Test completed successfully!"
-          echo "📋 This workflow tested:"
-          echo "  ✅ PR number extraction from commit messages"
-          echo "  ✅ Asana task ID extraction from PR bodies"
-          echo "  ✅ Failed workflow run detection"
-          echo "  ✅ Commit range analysis"
-          echo ""
-          echo "🔒 All operations were read-only and safe"
-          echo "🚀 Ready to implement in production workflow"
+      # - name: "Test Summary"
+      #   run: |
+      #     echo "🎉 Test completed successfully!"
+      #     echo "📋 This workflow tested:"
+      #     echo "  ✅ PR number extraction from commit messages"
+      #     echo "  ✅ Asana task ID extraction from PR bodies"
+      #     echo "  ✅ Failed workflow run detection"
+      #     echo "  ✅ Commit range analysis"
+      #     echo ""
+      #     echo "🔒 All operations were read-only and safe"
+      #     echo "🚀 Ready to implement in production workflow"
 
       - name: "Extract changelog"
         id: extract-changelog
