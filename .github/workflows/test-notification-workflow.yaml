@@ -17,7 +17,7 @@ jobs:
         with:
           fetch-depth: 0  # Get full history
 
-      - name: "Send Release Notification on Asana"
+      - name: "Send Release Notification on Asana Task"
         run: |
           # Extract PR number from merge commit message
           COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
@@ -119,3 +119,71 @@ jobs:
           echo ""
           echo "🔒 All operations were read-only and safe"
           echo "🚀 Ready to implement in production workflow"
+
+
+      - name: "Extract changelog"
+        id: extract-changelog
+        uses: TheDotLabs/extract-release-notes@main
+
+      - name: "Send Release Notifications on Asana Tasks"
+        run: |
+          # Extract all PR numbers from the release notes
+          RELEASE_NOTES="${{ steps.extract-changelog.outputs.release_notes }}"
+          PR_NUMBERS=$(echo "$RELEASE_NOTES" | grep -oP '\(#\K\d+(?=\))' | sort -u)
+          
+          if [ -z "$PR_NUMBERS" ]; then
+            echo "No PR numbers found in release notes"
+            exit 0
+          fi
+          
+          echo "Found PR numbers: $PR_NUMBERS"
+          
+          # Loop through each PR number
+          for PR_NUMBER in $PR_NUMBERS; do
+            echo "Processing PR #$PR_NUMBER"
+            
+            # Get PR body using GitHub API
+            PR_BODY=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER" | \
+              jq -r '.body // ""')
+            
+            # Extract Asana task ID from PR body
+            ASANA_TASK_ID=$(echo "$PR_BODY" | grep -oP 'https://app\.asana\.com/.*/(?:task|item)/\K\d+')
+            
+            # Only send update if task ID is found
+            if [ ! -z "$ASANA_TASK_ID" ]; then
+              REPO=${{ github.repository }}
+              PR_URL="https://github.com/$REPO/pull/$PR_NUMBER"
+              
+              echo "Updating Asana task $ASANA_TASK_ID for PR #$PR_NUMBER"
+              
+              curl -X POST https://app.asana.com/api/1.0/tasks/$ASANA_TASK_ID/stories \
+                -H "Authorization: Bearer ${{ secrets.ASANA_TOKEN }}" \
+                -H "Content-Type: application/json" \
+                -d "{\"data\": {
+                      \"text\": \"Hi team,\n🚀 This has been successfully deployed to production!\n🔗 PR Link: $PR_URL\n📦 Release: ${{ github.ref_name }}\"
+                    }}"
+              
+              echo "✅ Asana task updated: $ASANA_TASK_ID"
+            else
+              echo "⚠️  No Asana task ID found in PR #$PR_NUMBER"
+            fi
+            
+            # Small delay to avoid rate limiting
+            sleep 1
+          done
+          
+          echo "Finished processing all PR numbers"
+
+
+
+
+
+
+
+
+
+
+
+
+
