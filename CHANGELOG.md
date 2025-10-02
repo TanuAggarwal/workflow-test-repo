@@ -4,8 +4,9 @@ Official Changelog for different addition, changes, modifications.
 
 ## [1.21.14] 01/09/2025 (hotfix)
 
-- feat(inventory): move blocked stock to current (#4) (SatendraFieldAssist)
-- feat(inventory): move blocked stock to current (#5) (SatendraFieldAssist)
+- feat(inventory): add min/max mrp values to inventory kpi response (#10) (SatendraFieldAssist)
+- feat(inventory): move blocked stock to current (#9) (SatendraFieldAssist)
+- feat(kpi): add inventory kpi summary endpoint (#11) (SatendraFieldAssist)
 
 ## [1.21.13] 26/08/2025 (hotfix)
 
