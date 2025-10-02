@@ -15,7 +15,7 @@ workflow-test-repo/
 └── package.json (optional)
 ```
 
-## 2. Test Workflow File
+## 2. Test Workflow File Logs
 
 Create `.github/workflows/test-notification-workflow.yml`:
 
