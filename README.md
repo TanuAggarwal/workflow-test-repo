@@ -181,7 +181,7 @@ You'll need these secrets in your test repo:
 Add these debug steps to see what data you're working with:
 
 ```yaml
-- name: "Debug Information"
+- name: "Debug/Beta Information"
   run: |
     echo "Repository: ${{ github.repository }}"
     echo "Branch: ${{ github.ref_name }}"
