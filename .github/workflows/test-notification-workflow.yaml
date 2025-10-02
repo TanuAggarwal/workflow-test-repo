@@ -52,61 +52,61 @@ jobs:
             echo "No PR number found in commit message - this might be a direct push"
           fi
 
-      - name: "Test Previously Failed Commits Logic"
-        run: |
-          echo "🧪 Testing previously failed commits notification logic..."
+      # - name: "Test Previously Failed Commits Logic"
+      #   run: |
+      #     echo "🧪 Testing previously failed commits notification logic..."
           
-          # Get the last successful workflow run (safe read-only operation)
-          LAST_SUCCESS_SHA=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/runs?branch=${{ github.ref_name }}&status=success&per_page=1" | \
-            jq -r '.workflow_runs[0].head_sha // ""')
+      #     # Get the last successful workflow run (safe read-only operation)
+      #     LAST_SUCCESS_SHA=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+      #       "https://api.github.com/repos/${{ github.repository }}/actions/runs?branch=${{ github.ref_name }}&status=success&per_page=1" | \
+      #       jq -r '.workflow_runs[0].head_sha // ""')
           
-          echo "Last successful SHA: $LAST_SUCCESS_SHA"
-          echo "Current SHA: ${{ github.sha }}"
+      #     echo "Last successful SHA: $LAST_SUCCESS_SHA"
+      #     echo "Current SHA: ${{ github.sha }}"
           
-          # Get commits between last success and current (if different)
-          if [ ! -z "$LAST_SUCCESS_SHA" ] && [ "$LAST_SUCCESS_SHA" != "${{ github.sha }}" ]; then
-            echo "📊 Getting commits between $LAST_SUCCESS_SHA and ${{ github.sha }}"
+      #     # Get commits between last success and current (if different)
+      #     if [ ! -z "$LAST_SUCCESS_SHA" ] && [ "$LAST_SUCCESS_SHA" != "${{ github.sha }}" ]; then
+      #       echo "📊 Getting commits between $LAST_SUCCESS_SHA and ${{ github.sha }}"
             
-            # Get commits in the range (safe read-only)
-            COMMITS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              "https://api.github.com/repos/${{ github.repository }}/compare/$LAST_SUCCESS_SHA...${{ github.sha }}" | \
-              jq -r '.commits[]? | "\(.sha) \(.commit.message | split("\n")[0])"' || echo "")
+      #       # Get commits in the range (safe read-only)
+      #       COMMITS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+      #         "https://api.github.com/repos/${{ github.repository }}/compare/$LAST_SUCCESS_SHA...${{ github.sha }}" | \
+      #         jq -r '.commits[]? | "\(.sha) \(.commit.message | split("\n")[0])"' || echo "")
             
-            echo "Commits to analyze:"
-            echo "$COMMITS"
+      #       echo "Commits to analyze:"
+      #       echo "$COMMITS"
             
-            # Analyze each commit (read-only)
-            echo "$COMMITS" | while IFS=' ' read -r commit_sha commit_message; do
-              if [ ! -z "$commit_sha" ] && [ "$commit_sha" != "${{ github.sha }}" ]; then
-                echo "🔍 Analyzing commit: $commit_sha"
-                echo "📝 Message: $commit_message"
+      #       # Analyze each commit (read-only)
+      #       echo "$COMMITS" | while IFS=' ' read -r commit_sha commit_message; do
+      #         if [ ! -z "$commit_sha" ] && [ "$commit_sha" != "${{ github.sha }}" ]; then
+      #           echo "🔍 Analyzing commit: $commit_sha"
+      #           echo "📝 Message: $commit_message"
                 
-                # Check for failed workflow runs (read-only)
-                FAILED_RUNS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                  "https://api.github.com/repos/${{ github.repository }}/actions/runs?head_sha=$commit_sha&status=failure" | \
-                  jq -r '.workflow_runs[]? | select(.name == "Test Notification Workflow") | .id' || echo "")
+      #           # Check for failed workflow runs (read-only)
+      #           FAILED_RUNS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+      #             "https://api.github.com/repos/${{ github.repository }}/actions/runs?head_sha=$commit_sha&status=failure" | \
+      #             jq -r '.workflow_runs[]? | select(.name == "Test Notification Workflow") | .id' || echo "")
                 
-                if [ ! -z "$FAILED_RUNS" ]; then
-                  echo "❌ Found failed runs for commit $commit_sha: $FAILED_RUNS"
+      #           if [ ! -z "$FAILED_RUNS" ]; then
+      #             echo "❌ Found failed runs for commit $commit_sha: $FAILED_RUNS"
                   
-                  # Extract PR number from commit message
-                  PR_NUM=$(echo "$commit_message" | grep -oP 'Merge pull request #(\d+)' | grep -oP '\d+' || echo "")
+      #             # Extract PR number from commit message
+      #             PR_NUM=$(echo "$commit_message" | grep -oP 'Merge pull request #(\d+)' | grep -oP '\d+' || echo "")
                   
-                  if [ ! -z "$PR_NUM" ]; then
-                    echo "🔗 Found PR number $PR_NUM for failed commit"
-                    echo "📬 Would send delayed deployment notification for PR #$PR_NUM"
-                  else
-                    echo "ℹ️ No PR number found in commit message"
-                  fi
-                else
-                  echo "✅ No failed runs found for commit $commit_sha"
-                fi
-              fi
-            done
-          else
-            echo "ℹ️ No previous commits to check or this is the first run"
-          fi
+      #             if [ ! -z "$PR_NUM" ]; then
+      #               echo "🔗 Found PR number $PR_NUM for failed commit"
+      #               echo "📬 Would send delayed deployment notification for PR #$PR_NUM"
+      #             else
+      #               echo "ℹ️ No PR number found in commit message"
+      #             fi
+      #           else
+      #             echo "✅ No failed runs found for commit $commit_sha"
+      #           fi
+      #         fi
+      #       done
+      #     else
+      #       echo "ℹ️ No previous commits to check or this is the first run"
+      #     fi
 
       - name: "Test Summary"
         run: |
