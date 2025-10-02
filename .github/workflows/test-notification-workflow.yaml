@@ -17,7 +17,7 @@ jobs:
         with:
           fetch-depth: 0  # Get full history
 
-      - name: "Send Release Notification on Asana"
+      - name: "Send Release Notification on Task Asana"
         run: |
           # Extract PR number from merge commit message
           COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
