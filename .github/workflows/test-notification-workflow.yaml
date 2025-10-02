@@ -21,7 +21,7 @@ jobs:
         run: |
           # Extract PR number from merge commit message
           COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
-          PR_NUMBER=$(echo "$COMMIT_MESSAGE" | grep -oP 'Merge pull request #(\d+)' | grep -oP '\d+')
+          PR_NUMBER=$(echo "$COMMIT_MESSAGE" | grep -oP '#\K\d+')
           
           if [ ! -z "$PR_NUMBER" ]; then
             echo "Found PR number: $PR_NUMBER"
