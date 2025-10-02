@@ -87,18 +87,18 @@ jobs:
             echo "Processing PR #$PR_NUMBER"
 
             # Get PR body using GitHub API
-            PR_RESPONSE=$(curl -s -w "%{http_code}" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            PR_RESPONSE=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER")
-            
-            HTTP_STATUS="${PR_RESPONSE: -3}"  # Last 3 characters
-            PR_BODY=$(echo "$PR_RESPONSE" | head -c -3 | jq -r '.body // ""')
 
-            if [ "$HTTP_STATUS" != "200" ] || [ -z "$PR_BODY" ]; then
+            PR_BODY=$(echo "$PR_RESPONSE" | jq -r '.body // ""')
+
+            # Skip if PR body is empty or PR does not exist
+            if [ -z "$PR_BODY" ]; then
               echo "⚠️  Could not fetch PR #$PR_NUMBER body or PR does not exist. Skipping."
               continue
             fi
 
-            # Extract Asana task ID from PR body
+            # Extract Asana task ID from PR body (supports /task/ and /item/)
             ASANA_TASK_ID=$(echo "$PR_BODY" | grep -oP 'https://app\.asana\.com/.*/(?:task|item)/\K\d+' || true)
 
             if [ -n "$ASANA_TASK_ID" ]; then
@@ -112,7 +112,7 @@ jobs:
                 -H "Content-Type: application/json" \
                 -d "{\"data\": {
                       \"text\": \"Hi team,\n🚀 This has been successfully deployed to production!\n🔗 PR Link: $PR_URL\n📦 Release: ${{ github.ref_name }}\"
-                    }}"
+                    }}\"
 
               echo "✅ Asana task updated: $ASANA_TASK_ID"
             else
@@ -124,6 +124,7 @@ jobs:
           done
 
           echo "Finished processing all PR numbers"
+
 
 
 
