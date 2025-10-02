@@ -5,6 +5,10 @@ on:
     branches: [main, develop]
   workflow_dispatch:  # Allows manual triggering
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
 jobs:
   test-notification:
     runs-on: ubuntu-latest
