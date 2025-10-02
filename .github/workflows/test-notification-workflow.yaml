@@ -107,23 +107,19 @@ jobs:
 
               echo "Updating Asana task $ASANA_TASK_ID for PR #$PR_NUMBER"
 
+              PAYLOAD=$(jq -n --arg text "Hi team,🚀 This has been successfully deployed to production!🔗 PR Link: $PR_URL📦 Release: ${{ github.ref_name }}" '{data: {text: $text}}')
+
               curl -s -X POST https://app.asana.com/api/1.0/tasks/$ASANA_TASK_ID/stories \
                 -H "Authorization: Bearer ${{ secrets.ASANA_TOKEN }}" \
                 -H "Content-Type: application/json" \
-                -d "{\"data\": {
-                      \"text\": \"Hi team,\n🚀 This has been successfully deployed to production!\n🔗 PR Link: $PR_URL\n📦 Release: ${{ github.ref_name }}\"
-                    }}\"
+                -d "$PAYLOAD"
 
               echo "✅ Asana task updated: $ASANA_TASK_ID"
             else
               echo "⚠️  No Asana task ID found in PR #$PR_NUMBER. Skipping."
             fi
-
-            # Small delay to avoid rate limiting
-            sleep 1
           done
 
-          echo "Finished processing all PR numbers"
 
 
 
