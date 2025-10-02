@@ -35,37 +35,39 @@ jobs:
         with:
           fetch-depth: 0  # Get full history
 
-      - name: "Test Current PR Notification"
+    - name: "Send Release Notification on Asana"
         run: |
-          echo "🧪 Testing current PR notification logic..."
-          
           # Extract PR number from merge commit message
           COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
-          echo "Commit message: $COMMIT_MESSAGE"
-          
-          PR_NUMBER=$(echo "$COMMIT_MESSAGE" | grep -oP 'Merge pull request #(\d+)' | grep -oP '\d+' || echo "")
+          PR_NUMBER=$(echo "$COMMIT_MESSAGE" | grep -oP 'Merge pull request #(\d+)' | grep -oP '\d+')
           
           if [ ! -z "$PR_NUMBER" ]; then
-            echo "✅ Found PR number: $PR_NUMBER"
+            echo "Found PR number: $PR_NUMBER"
             
-            # Get PR body using GitHub API (read-only, safe)
+            # Get PR body using GitHub API
             PR_BODY=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER" | \
               jq -r '.body // ""')
             
-            echo "PR Body: $PR_BODY"
+            # Extract Asana task ID from PR body
+            ASANA_TASK_ID=$(echo "$PR_BODY" | grep -oP 'https://app\.asana\.com/.*/(?:task|item)/(\d+)' | grep -oP '\d+$')
             
-            # Extract Asana task ID (test pattern)
-            ASANA_TASK_ID=$(echo "$PR_BODY" | grep -oP 'https://app\.asana\.com/.*/(?:task|item)/(\d+)' | grep -oP '\d+$' || echo "")
-            
+            # Only send update if task ID is found
             if [ ! -z "$ASANA_TASK_ID" ]; then
-              echo "✅ Found Asana task ID: $ASANA_TASK_ID"
-              echo "🚀 Would notify: Hi team, this has been successfully deployed!"
+              REPO=${{ github.repository }}
+              PR_URL="https://github.com/$REPO/pull/$PR_NUMBER"
+              curl -X POST https://app.asana.com/api/1.0/tasks/$ASANA_TASK_ID/stories \
+                -H "Authorization: Bearer ${{ secrets.ASANA_TOKEN }}" \
+                -H "Content-Type: application/json" \
+                -d "{\"data\": {
+                      \"text\": \"Hi team,\n🚀 This has been successfully deployed to debug/beta!\n🔗 PR Link: $PR_URL\"
+                    }}"
+              echo "Asana task updated: $ASANA_TASK_ID"
             else
-              echo "ℹ️ No Asana task ID found in PR body"
+              echo "No Asana task ID found in PR body"
             fi
           else
-            echo "ℹ️ No PR number found in commit message"
+            echo "No PR number found in commit message - this might be a direct push"
           fi
 
       - name: "Test Previously Failed Commits Logic"
