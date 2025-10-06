@@ -23,35 +23,41 @@ jobs:
           COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
           PR_NUMBER=$(echo "$COMMIT_MESSAGE" | grep -oP '#\K\d+')
           
-          if [ -n "$PR_NUMBER" ]; then
-            echo "Found PR number: $PR_NUMBER"
-            
-            # Get PR body using GitHub API
-            PR_BODY=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER" | \
-              jq -r '.body // ""')
-            
-            # Extract Asana task ID from PR body (supports both /task/ and /item/)
-            ASANA_TASK_ID=$(echo "$PR_BODY" | grep -oP 'https://app\.asana\.com/.*/(?:task|item)/\d+' | grep -oP '\d+$' || true)
-            
-            if [ -n "$ASANA_TASK_ID" ]; then
-              REPO=${{ github.repository }}
-              PR_URL="https://github.com/$REPO/pull/$PR_NUMBER"
-              
-              curl -s -X POST https://app.asana.com/api/1.0/tasks/$ASANA_TASK_ID/stories \
-                -H "Authorization: Bearer ${{ secrets.ASANA_TOKEN }}" \
-                -H "Content-Type: application/json" \
-                -d "{\"data\": {
-                      \"text\": \"Hi team,\n🚀 This has been successfully deployed to debug/beta!\n🔗 PR Link: $PR_URL\" 
-                    }}"
-              
-              echo "Asana task updated: $ASANA_TASK_ID"
-            else
-              echo "No Asana task ID found in PR body — skipping notification."
-            fi
-          else
-            echo "No PR number found in commit message — this might be a direct push."
+          if [ -z "$PR_NUMBER" ]; then
+            echo "ℹ️ No PR number found in commit message — likely a direct push. Skipping Asana notification."
+            exit 0
           fi
+
+          echo "Found PR number: $PR_NUMBER"
+          
+          # Get PR body using GitHub API
+          PR_BODY=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER" | \
+            jq -r '.body // ""')
+          
+          # Extract Asana task ID from PR body (supports both /task/ and /item/)
+          ASANA_TASK_ID=$(echo "$PR_BODY" | grep -oP 'https://app\.asana\.com/.*/(?:task|item)/\d+' | grep -oP '\d+$' || true)
+          
+          if [ -z "$ASANA_TASK_ID" ]; then
+            echo "ℹ️ No Asana task ID found in PR body — skipping notification."
+            exit 0
+          fi
+
+          REPO=${{ github.repository }}
+          PR_URL="https://github.com/$REPO/pull/$PR_NUMBER"
+
+          echo "✅ Sending release notification to Asana task $ASANA_TASK_ID"
+
+          PAYLOAD=$(jq -n --arg text $'Hi team,\n🚀 This has been successfully deployed to debug/beta!\n🔗 PR Link: '"$PR_URL" \
+            '{data: {text: $text}}')
+          
+          # Send to Asana
+          curl -s -X POST "https://app.asana.com/api/1.0/tasks/$ASANA_TASK_ID/stories" \
+            -H "Authorization: Bearer ${{ secrets.ASANA_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD"
+
+          echo "✅ Asana task updated: $ASANA_TASK_ID"
 
       # - name: "Test Summary"
       #   run: |
@@ -107,8 +113,7 @@ jobs:
 
               echo "Updating Asana task $ASANA_TASK_ID for PR #$PR_NUMBER"
 
-              PAYLOAD=$(jq -n --arg text $'Hi team,\n🚀 This has been successfully deployed to production!\n🔗 PR Link: '"$PR_URL"'
-              📦 Release: '"${{ github.ref_name }}" '{data: {text: $text}}')
+              PAYLOAD=$(jq -n --arg text $'Hi team,\n🚀 This has been successfully deployed to production!\n🔗 PR Link: '"$PR_URL"'\n📦 Release: '"${{ github.ref_name }}" '{data: {text: $text}}')
 
               curl -s -X POST https://app.asana.com/api/1.0/tasks/$ASANA_TASK_ID/stories \
                 -H "Authorization: Bearer ${{ secrets.ASANA_TOKEN }}" \
