@@ -24,7 +24,7 @@ jobs:
           PR_NUMBER=$(echo "$COMMIT_MESSAGE" | grep -oP '#\K\d+')
           
           if [ -z "$PR_NUMBER" ]; then
-            echo "ℹ️ No PR number found in commit message — likely a direct push. Skipping Asana notification."
+            echo "ℹ️ No PR number found in commit message — likely direct push. Skipping Asana notification."
             exit 0
           fi
 
