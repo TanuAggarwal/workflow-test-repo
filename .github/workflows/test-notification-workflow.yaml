@@ -73,7 +73,10 @@ jobs:
       - name: "Send Release Notifications on Asana Tasks"
         run: |
           # Extract all PR numbers from the release notes
-          RELEASE_NOTES="${{ steps.extract-changelog.outputs.release_notes }}"
+          RELEASE_NOTES=$(cat <<'EOF'
+          ${{ steps.extract-changelog.outputs.release_notes }}
+          EOF
+            )
           PR_NUMBERS=$(echo "$RELEASE_NOTES" | grep -oP '\(#\K\d+(?=\))' | sort -u)
 
           if [ -z "$PR_NUMBERS" ]; then

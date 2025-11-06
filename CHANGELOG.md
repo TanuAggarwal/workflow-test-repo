@@ -6,6 +6,12 @@ Official Changelog for different addition, changes, modifications.
 
 - Reapply "feat(sr-approve): link sfa return to invoices(AB#159984) (#3170)" (#3173) (#3186) (Tanu Aggarwal)
 - Revert "chore(misc): add auth guard in temp controller" (Harsh)
+- feat(inventory): add min/max mrp values to inventory kpi response (AB#156284)(#10) (SatendraFieldAssist)
+- feat(inventory): move blocked stock to current (#9) (SatendraFieldAssist)
+- feat(kpi): add inventory kpi summary endpoint (#11) (SatendraFieldAssist)
+- chore(yml): resource update (Harsh)
+- feat(inv-adj): add factory admin check for inv approvals(AB#150416) (#274) (Piyash Rastogi)
+- feat(inv): add factory admin check for inv approvals (#273) (Piyash Rastogi)
 
 ## [1.21.14] 01/09/2025 (hotfix)
 
