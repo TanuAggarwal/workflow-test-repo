@@ -17,41 +17,41 @@ jobs:
         with:
           fetch-depth: 0  # Get full history
 
-      - name: "Send Release Notification on Asana Task"
-        run: |
-          # Extract PR number from merge commit message
-          COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
-          PR_NUMBER=$(echo "$COMMIT_MESSAGE" | grep -oP '#\K\d+')
+      # - name: "Send Release Notification on Asana Task"
+      #   run: |
+      #     # Extract PR number from merge commit message
+      #     COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
+      #     PR_NUMBER=$(echo "$COMMIT_MESSAGE" | grep -oP '#\K\d+')
 
-          if [ -n "$PR_NUMBER" ]; then
-            echo "Found PR number: $PR_NUMBER"
+      #     if [ -n "$PR_NUMBER" ]; then
+      #       echo "Found PR number: $PR_NUMBER"
 
-            # Get PR body using GitHub API
-            PR_BODY=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER" | \
-              jq -r '.body // ""')
+      #       # Get PR body using GitHub API
+      #       PR_BODY=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+      #         "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER" | \
+      #         jq -r '.body // ""')
 
-            # Extract Asana task ID from PR body (supports both /task/ and /item/)
-            ASANA_TASK_ID=$(echo "$PR_BODY" | grep -oP 'https://app\.asana\.com/.*/(?:task|item)/\d+' | grep -oP '\d+$' || true)
+      #       # Extract Asana task ID from PR body (supports both /task/ and /item/)
+      #       ASANA_TASK_ID=$(echo "$PR_BODY" | grep -oP 'https://app\.asana\.com/.*/(?:task|item)/\d+' | grep -oP '\d+$' || true)
 
-            if [ -n "$ASANA_TASK_ID" ]; then
-              REPO=${{ github.repository }}
-              PR_URL="https://github.com/$REPO/pull/$PR_NUMBER"
+      #       if [ -n "$ASANA_TASK_ID" ]; then
+      #         REPO=${{ github.repository }}
+      #         PR_URL="https://github.com/$REPO/pull/$PR_NUMBER"
 
-              curl -s -X POST https://app.asana.com/api/1.0/tasks/$ASANA_TASK_ID/stories \
-                -H "Authorization: Bearer ${{ secrets.ASANA_TOKEN }}" \
-                -H "Content-Type: application/json" \
-                -d "{\"data\": {
-                      \"text\": \"Hi team,\n🚀 This has been successfully deployed to debug/beta!\n🔗 PR Link: $PR_URL\"
-                    }}"
+      #         curl -s -X POST https://app.asana.com/api/1.0/tasks/$ASANA_TASK_ID/stories \
+      #           -H "Authorization: Bearer ${{ secrets.ASANA_TOKEN }}" \
+      #           -H "Content-Type: application/json" \
+      #           -d "{\"data\": {
+      #                 \"text\": \"Hi team,\n🚀 This has been successfully deployed to debug/beta!\n🔗 PR Link: $PR_URL\"
+      #               }}"
 
-              echo "Asana task updated: $ASANA_TASK_ID"
-            else
-              echo "No Asana task ID found in PR body — skipping notification."
-            fi
-          else
-            echo "No PR number found in commit message — this might be a direct push."
-          fi
+      #         echo "Asana task updated: $ASANA_TASK_ID"
+      #       else
+      #         echo "No Asana task ID found in PR body — skipping notification."
+      #       fi
+      #     else
+      #       echo "No PR number found in commit message — this might be a direct push."
+      #     fi
 
 
       # - name: "Test Summary"
@@ -73,7 +73,10 @@ jobs:
       - name: "Send Release Notifications on Asana Tasks"
         run: |
           # Extract all PR numbers from the release notes
-          RELEASE_NOTES="${{ steps.extract-changelog.outputs.release_notes }}"
+          RELEASE_NOTES=$(cat <<'EOF'
+          ${{ steps.extract-changelog.outputs.release_notes }}
+          EOF
+            )
           PR_NUMBERS=$(echo "$RELEASE_NOTES" | grep -oP '\(#\K\d+(?=\))' | sort -u)
 
           if [ -z "$PR_NUMBERS" ]; then

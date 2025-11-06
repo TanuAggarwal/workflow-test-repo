@@ -2,6 +2,11 @@
 
 Official Changelog for different addition, changes, modifications.
 
+## [1.21.15] 06/11/2025 (hotfix)
+
+- Reapply "feat(sr-approve): link sfa return to invoices(AB#159984) (#3170)" (#3173) (#3186) (Tanu Aggarwal)
+- Revert "chore(misc): add auth guard in temp controller" (Harsh)
+
 ## [1.21.14] 01/09/2025 (hotfix)
 
 - feat(inventory): add min/max mrp values to inventory kpi response (AB#156284)(#10) (SatendraFieldAssist)
